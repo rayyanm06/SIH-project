@@ -5,7 +5,9 @@ import { Button } from '../ui/button';
 import { ArrowUp, Share2, MapPin, Clock, CheckCircle, AlertCircle, Users, Zap, Award, TrendingUp } from 'lucide-react';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { hasVoted, setVotedLocal } from "../../utils/voteLocal";
 
+// ===== Helper Functions =====
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'Resolved': return 'bg-green-500/20 text-green-300 border-green-500/30 neon-glow-hover';
@@ -36,14 +38,16 @@ const getPriorityColor = (priority: string) => {
 export function UserHome() {
   const { t, language } = useLanguage();
 
+  // ===== Format time ago based on language =====
   const formatTimeAgo = (num: number, unit: 'hours' | 'days') => {
     if (language === 'hi') {
       return unit === 'hours' ? `${num} घंटे पहले` : `${num} दिन पहले`;
     } else {
-      return `${num} ${unit === 'hours' ? t.hoursAgo : t.daysAgo}`;
+      return `${num} ${unit === 'hours' ? t.hoursAgo ?? 'hours ago' : t.daysAgo ?? 'days ago'}`;
     }
   };
 
+  // ===== Recent reports data =====
   const recentReports = [
     {
       id: 1,
@@ -111,9 +115,95 @@ export function UserHome() {
     }
   ];
 
-  const handleUpvote = (reportId: number) => console.log(`Upvoted report ${reportId}`);
-  const handleShare = (reportId: number) => console.log(`Shared report ${reportId}`);
+  // ===== State: Votes for reports =====
+  const [reportVotes, setReportVotes] = React.useState<{ [key: number]: { votes: number; voted: boolean } }>({});
 
+  // ===== Initialize votes from local storage / static data =====
+  React.useEffect(() => {
+    const initVotes: { [key: number]: { votes: number; voted: boolean } } = {};
+    recentReports.forEach(r => {
+      initVotes[r.id] = {
+        votes: r.upvotes,
+        voted: hasVoted(r.id.toString())
+      };
+    });
+    setReportVotes(initVotes);
+  }, []);
+
+  // ===== Handle upvote button click =====
+  const handleUpvote = async (reportId: number) => {
+    setReportVotes(prev => {
+      const current = prev[reportId];
+      const newVoted = !current.voted;
+      const delta = newVoted ? 1 : -1;
+
+      // Optimistic update
+      const updated = {
+        ...prev,
+        [reportId]: {
+          votes: current.votes + delta,
+          voted: newVoted
+        }
+      };
+
+      // Save locally
+      setVotedLocal(reportId.toString(), newVoted);
+
+      // Send to backend
+      fetch(`/api/reports/${reportId}/vote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ voted: newVoted })
+      })
+        .then(res => res.json())
+        .then(json => {
+          if (typeof json.votes === "number") {
+            setReportVotes(p => ({
+              ...p,
+              [reportId]: { votes: json.votes, voted: newVoted }
+            }));
+          }
+        })
+        .catch(err => {
+          console.error("Vote API failed:", err);
+          // Rollback if API fails
+          setReportVotes(p => ({
+            ...p,
+            [reportId]: { votes: current.votes, voted: current.voted }
+          }));
+          setVotedLocal(reportId.toString(), current.voted);
+        });
+
+      return updated;
+    });
+  };
+
+  // ===== Handle share button click =====
+  const handleShare = async (reportId: number) => {
+    const report = recentReports.find(r => r.id === reportId);
+    if (!report) return;
+
+    const url = `${window.location.origin}/reports/${reportId}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: report.title,
+          text: report.description,
+          url
+        });
+      } catch {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        alert("Copied link: " + url);
+      } catch {
+        alert("Could not copy. Please manually copy this URL: " + url);
+      }
+    }
+  };
+
+  // ===== Render =====
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
@@ -210,10 +300,18 @@ export function UserHome() {
 
                   <div className="flex items-center justify-between pt-3 border-t border-white/10">
                     <div className="flex items-center space-x-3">
-                      <Button variant="ghost" size="sm" onClick={() => handleUpvote(report.id)} className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 neon-glow-hover transition-all duration-300 hover:scale-105">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleUpvote(report.id)}
+                        className={`${
+                          reportVotes[report.id]?.voted ? "text-blue-400" : "text-gray-400"
+                        } hover:text-blue-400 hover:bg-blue-500/10 transition-all duration-300`}
+                      >
                         <ArrowUp className="h-4 w-4 mr-1" />
-                        <span className="font-semibold">{report.upvotes}</span>
+                        <span className="font-semibold">{reportVotes[report.id]?.votes ?? report.upvotes}</span>
                       </Button>
+
                       <Button variant="ghost" size="sm" onClick={() => handleShare(report.id)} className="text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 neon-glow-hover transition-all duration-300 hover:scale-105">
                         <Share2 className="h-4 w-4" />
                       </Button>
