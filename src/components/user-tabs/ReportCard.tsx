@@ -34,47 +34,8 @@ const ReportCard: React.FC<ReportCardProps> = ({
     }
   }, [id, initialVoted]);
 
-  const apiVote = async (newVoted: boolean) => {
-    try {
-      const res = await fetch(`/api/reports/${id}/vote`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voted: newVoted }),
-      });
-      if (!res.ok) throw new Error("Server error");
-      const json = await res.json();
-      if (typeof json.votes === "number") setVotes(json.votes);
-      return true;
-    } catch (err) {
-      console.error("Vote API failed:", err);
-      return false;
-    }
-  };
-
-  const handleVote = async () => {
-    if (loading) return;
-    setLoading(true);
-
-    const newVoted = !voted;
-    const delta = newVoted ? 1 : -1;
-
-    // Optimistic update
-    setVotes((v) => v + delta);
-    setVoted(newVoted);
-    setVotedLocal(id, newVoted);
-
-    const ok = await apiVote(newVoted);
-
-    if (!ok) {
-      // rollback if backend fails
-      setVotes((v) => v - delta);
-      setVoted(!newVoted);
-      setVotedLocal(id, !newVoted);
-      alert("Could not save vote to server — saved only locally.");
-    }
-
-    setLoading(false);
-  };
+  
+  
 
   const handleShare = async () => {
     const url = `${window.location.origin}/reports/${id}`;
@@ -108,7 +69,7 @@ const ReportCard: React.FC<ReportCardProps> = ({
         <p style={{ color: "#bdbdbd", margin: "0 0 14px" }}>{description}</p>
         {location && <div style={{ color: "#b9a7ff", marginBottom: 18 }}>📍 {location}</div>}
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <button
+          {/* <button
             onClick={handleVote}
             disabled={loading}
             aria-pressed={voted}
@@ -127,7 +88,7 @@ const ReportCard: React.FC<ReportCardProps> = ({
           >
             <FaArrowUp />
             <span>{votes}</span>
-          </button>
+          </button> */}
 
           <button
             onClick={handleShare}

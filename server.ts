@@ -2,50 +2,50 @@
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
-import type { Request, Response } from "express";
 
 const app = express();
 const PORT = 5000;
 
-// Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
-// In-memory vote store for testing
-let reportVotes: { [key: string]: number } = {
-  "1": 47,
-  "2": 89,
-  "3": 23,
-  "4": 65
+// ===== In-memory vote store =====
+let reportVotes: { [key: string]: { count: number; voters: string[] } } = {
+  "1": { count: 47, voters: [] },
+  "2": { count: 89, voters: [] },
+  "3": { count: 23, voters: [] },
+  "4": { count: 65, voters: [] },
 };
 
-// POST /api/reports/:id/vote
-// Body: { voted: boolean }
-app.post("/api/reports/:id/vote", (req: Request, res: Response) => {
-  const reportId = req.params.id;
-  const { voted } = req.body as { voted: boolean };
-
-  if (!(reportId in reportVotes)) {
-    return res.status(404).json({ error: "Report not found" });
-  }
-
-  // Increment or decrement votes
-  reportVotes[reportId] += voted ? 1 : -1;
-
-  return res.json({ votes: reportVotes[reportId] });
+// ===== Root endpoint =====
+app.get("/", (req, res) => {
+  res.send("✅ Server running. Use /api/reports/:id/vote");
 });
 
-// GET /api/reports/:id/vote
-// Returns current vote count
-app.get("/api/reports/:id/vote", (req: Request, res: Response) => {
+// ===== GET vote count =====
+app.get("/api/reports/:id/vote", (req, res) => {
   const reportId = req.params.id;
-  if (!(reportId in reportVotes)) {
-    return res.status(404).json({ error: "Report not found" });
-  }
-  return res.json({ votes: reportVotes[reportId] });
+  const report = reportVotes[reportId];
+  if (!report) return res.status(404).json({ error: "Report not found" });
+
+  res.json({ votes: report.count });
 });
 
-// Start server
+// ===== POST upvote =====
+app.post("/api/reports/:id/vote", (req, res) => {
+  const reportId = req.params.id;
+  const { voterId } = req.body; // not used for now, but kept for future uniqueness
+
+  const report = reportVotes[reportId];
+  if (!report) return res.status(404).json({ error: "Report not found" });
+
+  // always increment — every click adds 1
+  report.count += 1;
+
+  res.json({ votes: report.count });
+});
+
+// ===== Start server =====
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 });

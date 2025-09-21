@@ -104,6 +104,15 @@ mumbaiMunicipalCorporation: string;
 hoursAgo: string;
 daysAgo: string;
 
+ //government
+    welcomeOfficer: string;
+  
+    overview: string;
+    assignment: string;
+    solutions: string;
+    teamManagement: string;
+
+
  steps: {
     step: string;
     of: string;
@@ -194,6 +203,8 @@ daysAgo: string;
     AllTime: string;
     points: string;
 
+   
+
     // Badges
     civicHero: string;
     problemSolver: string;
@@ -239,6 +250,8 @@ const translations: Record<Language, Translations> = {
       officers: ['Inspector Rajesh Khanna', 'Officer Meera Nair', 'Superintendent Anil Verma', 'Inspector Pooja Sharma', 'Officer Sanjay Tiwari'],
       areas: ['Bandra West', 'Andheri East', 'Powai', 'Goregaon', 'Malad', 'Borivali', 'Thane', 'Kurla'],
     },
+
+    
 
     // Analytics keys
     totalReports: 'Total Reports',
@@ -296,6 +309,14 @@ const translations: Record<Language, Translations> = {
     mumbaiMunicipalCorporation: 'Mumbai Municipal Corporation',
     hoursAgo: 'hours ago',
     daysAgo: 'days ago',
+
+  welcomeOfficer: "Welcome Officer",
+  overview: "Overview",
+  assignment: "Assignments",
+  solutions: "Solutions",
+  teamManagement: "Team Management",
+
+    
 
     steps: {
     step: 'Step',
@@ -365,6 +386,9 @@ const translations: Record<Language, Translations> = {
     title: 'Report an Issue',
     subtitle: 'Help us improve your city by reporting local problems',
   },
+
+
+
 
    userLeaderboard: {
       communityLeaderboard: "Community Leaderboard",
@@ -485,6 +509,13 @@ const translations: Record<Language, Translations> = {
     mumbaiMunicipalCorporation: 'मुंबई महानगरपालिका',
     hoursAgo: 'घंटे पहले',
     daysAgo: 'दिन पहले',
+
+  welcomeOfficer: "अधिकारियों का स्वागत है",
+  overview: "समीक्षा",
+  assignment: "सौंपे गए कार्य",
+  solutions: "समाधान",
+  teamManagement: "टीम प्रबंधन",
+  
 
     
     //report
